@@ -1,5 +1,5 @@
-import sys
 import random
+import sys
 
 import selenium
 from selenium import webdriver
@@ -16,7 +16,8 @@ IGNORE_TITLES = [
     "Transparency Report",
 ]
 TARGET_DIR = "output"
-LAST_PAGE = 625
+EXTENSION = "txt"
+LAST_PAGE = 624
 
 
 def main() -> int:
@@ -25,23 +26,28 @@ def main() -> int:
     options.add_argument("--incognito")
     browser = webdriver.Chrome(options=options)
 
-    pages = [i for i in range(1, LAST_PAGE)]
+    pages = [i for i in range(1, LAST_PAGE + 1)]
     # scramble the order of the pages
     random.shuffle(pages)
 
     for i in tqdm(pages):
         browser.get(BASE_URL + f"?page={i}")
+
         doxes = browser.find_elements(By.XPATH, DOX_XPATH)
+
         links_and_titles = [
-            (dox.get_attribute("href"), dox.get_attribute("title")) for dox in doxes
+            (dox.get_attribute("href"), dox.get_attribute("title"))
+            for dox in doxes
+            if dox.get_attribute("title") not in IGNORE_TITLES
         ]
-        for link, title in links_and_titles:
-            if title in IGNORE_TITLES:
-                continue
+
+        for link, title in tqdm(links_and_titles):
             browser.get(link)
             dox_body = browser.find_element(By.XPATH, DOX_BODY_XPATH)
-            with open(f"{TARGET_DIR}/{title}.txt", "w") as f:
+
+            with open(f"{TARGET_DIR}/{title}.{EXTENSION}", "w") as f:
                 f.write(dox_body.text)
+
     return 0
 
 
